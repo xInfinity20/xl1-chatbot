@@ -13,3 +13,4 @@ transformers
 pypdf
 pypdf2
 huggingface-hub
+itsdangerous
