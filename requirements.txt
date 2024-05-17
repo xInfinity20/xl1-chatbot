@@ -1,0 +1,15 @@
+fastapi
+starlette
+passlib
+uvicorn
+jinja2
+langchain
+langchain-community
+faiss-cpu
+torch
+accelerate
+safetensors
+transformers
+pypdf
+pypdf2
+huggingface-hub
