@@ -260,69 +260,92 @@
           });
       });
       
-      async function processChatResponse(response){
-        console.log('Processing response:', response); // Log the response
-          switch (response.status) {
-              case 400:  
-                  Swal.fire({
-                      icon: 'error',
-                      title: 'Oops!!!',
-                      text: "Sorry, Couldn't be able to generate your response now. Please try after some time.",
-                      confirmButtonColor: "#040b14"
-                  })
-              break;
-              case 200:                      
-                  var json = await response.json();
-                  console.log('Parsed JSON:', json); // Log the parsed JSON 
-                  var chatResult = json.answer.replace("\n", "<br>");
-                  var sourceDocumentList = json.source_documents; // tadi json.source_documents_list
-                  console.log('Chat result:', chatResult); // Log the chat result
-                  console.log('Source documents:', sourceDocumentList); // Log source documents
-                  
-                  var html = `
-                          <div class="row mb-5">
-                              <div class="col-sm-9 text-start">
-                                  <div class="row">           
-                                      <div class="col-sm-1">
-                                          <img src="../static/assets/images/bot-avatar.png" alt="Avatar" class="avatar">
-                                      </div>                             
-                                      <div class="col-sm-11 bg-maroon shadow rounded-3">
-                                          <h6 class="p-3 text-white mb-4">`+chatResult+`</h6>`
-                  if (sourceDocumentList.length > 0) {
-                      html += `                        
-                                              <div class="row p-3">
-                      
-                          
-                                                  <div class="col-sm-9">
-                                                      <a class="p-2 btn bg-white text-dark w-100" href="../static/`+sourceDocumentList[0]+`" target="_blank">`+extractFilename(sourceDocumentList[0])+`</a>.
-                                                  </div>
-                                                  <div class="col-sm-3">
-                                                      <span class="p-2 btn bg-white text-dark w-100">Page Number: `+json.page_number_list[0]+`</span>.
-                                                  </div>
-                          
-                                              </div>`
-                  }
-                  html += `                        
-                                      </div>
-                                      
-                                  </div>
-                              </div>                                
-                              <div class=" col-sm-3"></div>
-                          </div>
-                  `;
-                  var loader = document.getElementById('loader');
-                  loader.remove();
-                  chatResponseBox.innerHTML += html;
-                  break;
-              default:
-                  Swal.fire({
-                      icon: 'error',
-                      title: 'Oops!!!',
-                      text: "There is a "+response.status+" error. Please contact admin for support.",
-                      confirmButtonColor: "#040b14"
-                  })
-          }
-      }
+      async function processChatResponse(response) {
+    console.log('Processing response:', response); // Log the response
+
+    switch (response.status) {
+        case 400:
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops!!!',
+                text: "Sorry, Couldn't be able to generate your response now. Please try after some time.",
+                confirmButtonColor: "#040b14"
+            });
+            break;
+        case 200:
+            try {
+                var json = await response.json();
+                console.log('Parsed JSON:', json); // Log the parsed JSON 
+
+                if (json.answer) {
+                    var chatResult = json.answer.replace(/\n/g, "<br>");
+                } else {
+                    throw new Error("The answer is undefined.");
+                }
+
+                var sourceDocumentList = json.source_documents || [];
+                console.log('Chat result:', chatResult); // Log the chat result
+                console.log('Source documents:', sourceDocumentList); // Log source documents
+
+                var html = `
+                    <div class="row mb-5">
+                        <div class="col-sm-9 text-start">
+                            <div class="row">           
+                                <div class="col-sm-1">
+                                    <img src="../static/assets/images/bot-avatar.png" alt="Avatar" class="avatar">
+                                </div>                             
+                                <div class="col-sm-11 bg-maroon shadow rounded-3">
+                                    <h6 class="p-3 text-white mb-4">${chatResult}</h6>
+                `;
+
+                if (sourceDocumentList.length > 0) {
+                    html += `
+                        <div class="row p-3">
+                            <div class="col-sm-9">
+                                <a class="p-2 btn bg-white text-dark w-100" href="../static/${sourceDocumentList[0]}" target="_blank">${extractFilename(sourceDocumentList[0])}</a>
+                            </div>
+                            <div class="col-sm-3">
+                                <span class="p-2 btn bg-white text-dark w-100">Page Number: ${json.page_number_list ? json.page_number_list[0] : 'N/A'}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                                </div>
+                            </div>
+                        </div>                                
+                        <div class="col-sm-3"></div>
+                    </div>
+                `;
+
+                var loader = document.getElementById('loader');
+                if (loader) loader.remove();
+                chatResponseBox.innerHTML += html;
+            } catch (error) {
+                console.error('Error processing JSON:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops!!!',
+                    text: "An error occurred while processing the response.",
+                    confirmButtonColor: "#040b14"
+                });
+            }
+            break;
+        default:
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops!!!',
+                text: `There is a ${response.status} error. Please contact admin for support.`,
+                confirmButtonColor: "#040b14"
+            });
+    }
+}
+
+function extractFilename(path) {
+    return path.split('/').pop();
+}
+
 
       userInput.addEventListener("keypress", function(event) {
           // If the user presses the "Enter" key on the keyboard
